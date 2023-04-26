@@ -4,6 +4,14 @@ inputs:
   dir:
     description: 'Directory containing tarballs to be published.'
     required: true
+  node-version:
+    description: 'Node version to install.'
+    required: false
+    default: ''
+  registry-url:
+    description: 'npm registry URL.'
+    required: false
+    default: ''
   github-release:
     description: 'Filename or glob to fetch from GitHub releases.'
     required: false
