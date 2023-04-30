@@ -2,11 +2,11 @@ name: 'Publish Neon Library'
 description: 'Publish a Neon library and its prebuilds.'
 inputs:
   working-directory:
-    description: 'Working directory to run commands from, relative to repo root.'
+    description: 'Working directory of the library (for extracting package metadata), relative to repo root.'
     required: false
     default: '.'
   tarball-directory:
-    description: 'Directory in which to fetch the tarballs to be published, relative to working-directory.'
+    description: 'Directory in which to fetch the tarballs to be published, relative to repo root.'
     required: false
     default: 'dist'
   node-version:
@@ -48,7 +48,7 @@ runs:
       with:
         tag: ${{ steps.tagName.outputs.tag }}
         fileName: ${{ inputs['github-release'] }}
-        out-file-path: ${{ inputs['working-directory'] }}/${{ inputs['tarball-directory'] }}
+        out-file-path: ${{ inputs['tarball-directory'] }}
     - name: Get Package Metadata
       id: package
       shell: bash
@@ -65,4 +65,4 @@ runs:
           npm publish --access public $p
         done
         npm publish ${{ steps.package.outputs.name }}-${{ steps.package.outputs.version }}.tgz
-      working-directory: ${{ inputs['working-directory'] }}/${{ inputs['tarball-directory'] }}
+      working-directory: ${{ inputs['tarball-directory'] }}
