@@ -1,9 +1,14 @@
 name: 'Publish Neon Library'
 description: 'Publish a Neon library and its prebuilds.'
 inputs:
-  dir:
-    description: 'Directory containing tarballs to be published.'
-    required: true
+  working-directory:
+    description: 'Working directory to run commands from, relative to repo root.'
+    required: false
+    default: '.'
+  tarball-directory:
+    description: 'Directory in which to fetch the tarballs to be published, relative to working-directory.'
+    required: false
+    default: 'dist'
   node-version:
     description: 'Node version to install.'
     required: false
@@ -43,20 +48,19 @@ runs:
       with:
         tag: ${{ steps.tagName.outputs.tag }}
         fileName: ${{ inputs['github-release'] }}
-        out-file-path: ${{ inputs.dir }}
+        out-file-path: ${{ inputs['working-directory'] }}/${{ inputs['tarball-directory'] }}
     - name: Get Package Metadata
       id: package
       shell: bash
       run: |
         echo "version=$(cat package.json | jq -r .version)" > $GITHUB_OUTPUT
         echo "name=$(cat package.json | jq -r .name)" >> $GITHUB_OUTPUT
+      working-directory: ${{ inputs['working-directory'] }}
     - name: Publish
       shell: bash
       run: |
-        cd ${{ inputs.dir }}
-        pwd
-        ls
         for p in ${{ steps.package.outputs.name }}-*-${{ steps.package.outputs.version }}.tgz; do
           npm publish --access public $p
         done
-        npm publis ${{ steps.package.outputs.name }}-${{ steps.package.outputs.version }}.tgz
+        npm publish ${{ steps.package.outputs.name }}-${{ steps.package.outputs.version }}.tgz
+      working-directory: ${{ inputs['working-directory'] }}/${{ inputs['tarball-directory'] }}
