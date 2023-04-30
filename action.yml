@@ -59,6 +59,8 @@ runs:
     - name: Publish
       shell: bash
       run: |
+        pwd
+        ls
         for p in ${{ steps.package.outputs.name }}-*-${{ steps.package.outputs.version }}.tgz; do
           npm publish --access public $p
         done
