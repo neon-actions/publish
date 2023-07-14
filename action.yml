@@ -6,7 +6,7 @@ inputs:
     required: false
     default: '.'
   tarball-directory:
-    description: 'Directory in which to fetch the tarballs to be published, relative to repo root.'
+    description: 'Directory in which to find (or place) the tarballs to be published, relative to repo root.'
     required: false
     default: 'dist'
   node-version:
@@ -17,10 +17,14 @@ inputs:
     description: 'npm registry URL.'
     required: false
     default: ''
-  github-release:
-    description: 'Filename or glob to fetch from GitHub releases.'
+  fetch-binaries:
+    description: 'Filename or glob to fetch binary packages from GitHub releases.'
     required: false
     default: ''
+  github-release:
+    description: 'Publish tarball to GitHub releases.'
+    required: false
+    default: false
   filename:
     description: 'Filename or glob of local tarballs.'
     required: false
@@ -40,12 +44,20 @@ runs:
     - name: Get Tag Name
       uses: olegtarasov/get-tag@v2.1.2
       id: tagName
+    - name: Normalize Tarball Directory
+      id: tarballs
+      shell: bash
+      run: |
+        echo "Normalizing tarball directory..."
+        echo "abspath=$(pwd)"
+        echo "abspath=$(pwd)" >> $GITHUB_OUTPUT
+      working-directory: ${{ inputs['tarball-directory'] }}
     - name: Fetch Packages
-      if: ${{ inputs['github-release'] }}
+      if: ${{ inputs['fetch-binaries'] }}
       uses: robinraju/release-downloader@v1.7
       with:
         tag: ${{ steps.tagName.outputs.tag }}
-        fileName: ${{ inputs['github-release'] }}
+        fileName: ${{ inputs['fetch-binaries'] }}
         out-file-path: ${{ inputs['tarball-directory'] }}
     - name: Get Package Metadata
       id: package
@@ -54,7 +66,7 @@ runs:
         echo "version=$(cat package.json | jq -r .version)" > $GITHUB_OUTPUT
         echo "name=$(cat package.json | jq -r .name)" >> $GITHUB_OUTPUT
       working-directory: ${{ inputs['working-directory'] }}
-    - name: Publish
+    - name: Publish Binary Packages
       shell: bash
       run: |
         pwd
@@ -62,5 +74,26 @@ runs:
         for p in ${{ steps.package.outputs.name }}-*-${{ steps.package.outputs.version }}.tgz; do
           npm publish --access public $p
         done
+      working-directory: ${{ inputs['tarball-directory'] }}
+    - name: Publish Main Package
+      if: ${{ !inputs['github-release'] }}
+      shell: bash
+      run: npm publish
+      working-directory: ${{ inputs['working-directory'] }}
+    - name: Pack Main Package
+      if: ${{ inputs['github-release'] }}
+      shell: bash
+      run: |
+        npm pack --pack-destination=${{ steps.tarballs.outputs.abspath }}
+      working-directory: ${{ inputs['working-directory'] }}
+    - name: Release Main Package
+      if: ${{ inputs['github-release'] }}
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ${{ inputs['tarball-directory'] }}/${{ steps.package.outputs.name }}-${{ steps.package.outputs.version }}.tgz
+    - name: Publish Main Package
+      if: ${{ inputs['github-release'] }}
+      shell: bash
+      run: |
         npm publish ${{ steps.package.outputs.name }}-${{ steps.package.outputs.version }}.tgz
       working-directory: ${{ inputs['tarball-directory'] }}
