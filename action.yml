@@ -48,10 +48,11 @@ runs:
       id: tarballs
       shell: bash
       run: |
+        mkdir -p ${{ inputs['tarball-directory'] }}
+        cd ${{ inputs['tarball-directory'] }}
         echo "Normalizing tarball directory..."
         echo "abspath=$(pwd)"
         echo "abspath=$(pwd)" >> $GITHUB_OUTPUT
-      working-directory: ${{ inputs['tarball-directory'] }}
     - name: Fetch Packages
       if: ${{ inputs['fetch-binaries'] }}
       uses: robinraju/release-downloader@v1.7
