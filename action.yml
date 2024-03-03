@@ -21,6 +21,10 @@ inputs:
     description: 'Filename or glob to fetch binary packages from GitHub releases.'
     required: false
     default: ''
+  tag:
+    description: 'Tag name to fetch from GitHub releases (default: infer from pushed tag).'
+    required: false
+    default: ''
   github-release:
     description: 'Publish tarball to GitHub releases.'
     required: false
@@ -42,6 +46,7 @@ runs:
         registry-url: ${{ inputs['registry-url'] }}
         cache: npm
     - name: Get Tag Name
+      if: ${{ inputs['fetch-binaries'] && !inputs.tag }}
       uses: olegtarasov/get-tag@v2.1.2
       id: tagName
     - name: Normalize Tarball Directory
@@ -57,7 +62,7 @@ runs:
       if: ${{ inputs['fetch-binaries'] }}
       uses: robinraju/release-downloader@v1.7
       with:
-        tag: ${{ steps.tagName.outputs.tag }}
+        tag: ${{ inputs.tag || steps.tagName.outputs.tag }}
         fileName: ${{ inputs['fetch-binaries'] }}
         out-file-path: ${{ inputs['tarball-directory'] }}
     - name: Get Package Metadata
